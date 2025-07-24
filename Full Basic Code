@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pong Game</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #222;
+    margin: 0;
+  }
+
+  #gameCanvas {
+    background-color: #000;
+    border: 4px solid #444;
+    display: block;
+  }
+
+  #scoreboard {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    text-align: center;
+    font-family: 'Arial', sans-serif;
+    font-size: 24px;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+<div id="scoreboard">
+  Player: <span id="playerScore">0</span> | Computer: <span id="computerScore">0</span>
+</div>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const playerScoreSpan = document.getElementById('playerScore');
+  const computerScoreSpan = document.getElementById('computerScore');
+
+  // Game objects
+  const paddleWidth = 10;
+  const paddleHeight = 100;
+  const ballSize = 10;
+
+  let playerScore = 0;
+  let computerScore = 0;
+
+  // Player paddle position
+  const playerPaddle = {
+    x: 20,
+    y: (canvas.height - paddleHeight) / 2,
+    width: paddleWidth,
+    height: paddleHeight,
+    speed: 5,
+    dy: 0
+  };
+
+  // Computer paddle position
+  const computerPaddle = {
+    x: canvas.width - 20 - paddleWidth,
+    y: (canvas.height - paddleHeight) / 2,
+    width: paddleWidth,
+    height: paddleHeight,
+    speed: 4
+  };
+
+  // Ball position and speed
+  const ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    size: ballSize,
+    speedX: 4,
+    speedY: 4
+  };
+
+  // Keyboard controls
+  const keys = {
+    ArrowUp: false,
+    ArrowDown: false
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key in keys) {
+      keys[e.key] = true;
+    }
+  });
+  document.addEventListener('keyup', (e) => {
+    if (e.key in keys) {
+      keys[e.key] = false;
+    }
+  });
+
+  function resetBall() {
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    // Launch ball towards the player or computer randomly
+    ball.speedX = Math.random() > 0.5 ? 4 : -4;
+    ball.speedY = (Math.random() * 4) - 2; // random vertical speed
+  }
+
+  function drawRect(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+  }
+
+  function drawBall() {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
+  }
+
+  function update() {
+    // Move player paddle
+    if (keys.ArrowUp && playerPaddle.y > 0) {
+      playerPaddle.y -= playerPaddle.speed;
+    }
+    if (keys.ArrowDown && playerPaddle.y + playerPaddle.height < canvas.height) {
+      playerPaddle.y += playerPaddle.speed;
+    }
+
+    // Move ball
+    ball.x += ball.speedX;
+    ball.y += ball.speedY;
+
+    // Ball collision with top and bottom walls
+    if (ball.y <= 0 || ball.y + ball.size >= canvas.height) {
+      ball.speedY = -ball.speedY;
+    }
+
+    // Collision with player paddle
+    if (
+      ball.x <= playerPaddle.x + playerPaddle.width &&
+      ball.x >= playerPaddle.x &&
+      ball.y + ball.size >= playerPaddle.y &&
+      ball.y <= playerPaddle.y + playerPaddle.height
+    ) {
+      ball.speedX = -ball.speedX;
+      // Optional: add some randomness or speed increase
+    }
+
+    // Collision with computer paddle
+    if (
+      ball.x + ball.size >= computerPaddle.x &&
+      ball.x + ball.size <= computerPaddle.x + computerPaddle.width &&
+      ball.y + ball.size >= computerPaddle.y &&
+      ball.y <= computerPaddle.y + computerPaddle.height
+    ) {
+      ball.speedX = -ball.speedX;
+    }
+
+    // Check for scoring
+    if (ball.x < 0) {
+      // Computer scores
+      computerScore++;
+      computerScoreSpan.textContent = computerScore;
+      resetBall();
+    } else if (ball.x + ball.size > canvas.width) {
+      // Player scores
+      playerScore++;
+      playerScoreSpan.textContent = playerScore;
+      resetBall();
+    }
+
+    // Move computer paddle (unbeatable: follow the ball)
+    if (ball.y < computerPaddle.y + computerPaddle.height / 2 && computerPaddle.y > 0) {
+      computerPaddle.y -= computerPaddle.speed;
+    } else if (ball.y > computerPaddle.y + computerPaddle.height / 2 && computerPaddle.y + computerPaddle.height < canvas.height) {
+      computerPaddle.y += computerPaddle.speed;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw paddles and ball
+    drawRect(playerPaddle.x, playerPaddle.y, playerPaddle.width, playerPaddle.height, '#0f0');
+    drawRect(computerPaddle.x, computerPaddle.y, computerPaddle.width, computerPaddle.height, '#f00');
+    drawBall();
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Start game
+  resetBall();
+  gameLoop();
+</script>
+</body>
+</html>
